@@ -1,5 +1,7 @@
 streamlit
-langchain
 openai
+langchain>=0.1.0
+langchain_community
 faiss-cpu
 python-dotenv
+tiktoken
