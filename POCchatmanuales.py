@@ -83,7 +83,7 @@ if st.session_state.tema is None:
             st.session_state.qa = qa_chain
             st.session_state.chat_history = []
             st.session_state.memory = memoria
-        st.experimental_rerun()
+        st.rerun() 
 else:
     st.markdown(f"### Tema seleccionado: {st.session_state.tema}")
     pregunta = st.text_input("Haz tu pregunta sobre este tema:")
