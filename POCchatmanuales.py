@@ -12,7 +12,7 @@ def autenticar():
         if st.button("Ingresar"):
             if usuario == st.secrets["credenciales"]["usuario"] and clave == st.secrets["credenciales"]["clave"]:
                 st.session_state.autenticado = True
-                st.experimental_rerun()
+                st.rerun()
             else:
                 st.error("Credenciales incorrectas")
         st.stop()  # detiene la app si no se ha autenticado
