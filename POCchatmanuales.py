@@ -1,4 +1,23 @@
 import streamlit as st
+
+import streamlit as st
+
+def autenticar():
+    if "autenticado" not in st.session_state:
+        st.session_state.autenticado = False
+
+    if not st.session_state.autenticado:
+        usuario = st.text_input("Usuario")
+        clave = st.text_input("Contraseña", type="password")
+        if st.button("Ingresar"):
+            if usuario == st.secrets["credenciales"]["usuario"] and clave == st.secrets["credenciales"]["clave"]:
+                st.session_state.autenticado = True
+                st.experimental_rerun()
+            else:
+                st.error("Credenciales incorrectas")
+        st.stop()  # detiene la app si no se ha autenticado
+
+
 from langchain.chat_models import ChatOpenAI
 from langchain.chains import ConversationalRetrievalChain
 from langchain.vectorstores import FAISS
@@ -11,6 +30,8 @@ from datetime import datetime
 import os
 from dotenv import load_dotenv
 from pathlib import Path
+
+autenticar()
 
 # Configura tu API key aquí o como variable de entorno
 load_dotenv()
