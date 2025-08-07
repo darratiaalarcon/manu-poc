@@ -128,11 +128,11 @@ else:
             st.session_state.qa = None
             st.session_state.chat_history = []
             st.session_state.memory = None
-            st.experimental_rerun()
+            st.rerun()
     with col2:
         if st.button("🧼 Reiniciar conversación actual"):
             st.session_state.chat_history = []
             if st.session_state.memory:
                 st.session_state.memory.clear()
             st.success("✅ Conversación reiniciada. Puedes comenzar de nuevo.")
-            st.experimental_rerun()
+            st.rerun() 
