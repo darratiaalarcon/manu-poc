@@ -1,49 +1,49 @@
 import streamlit as st
 
-import streamlit as st
-
 def autenticar():
-    st.markdown("<h1 style='text-align: center;'>📘 Manu te da la bienvenida</h1>", unsafe_allow_html=True)
-    
-    st.markdown("""
-        <div style='text-align: center;'>
-            <img src="https://cdn-icons-png.flaticon.com/512/4712/4712035.png" width="120"/>
-        </div>
-    """, unsafe_allow_html=True)
-
-    st.markdown("<p style='text-align: center; font-size: 18px;'>Por favor, ingresa tus credenciales para acceder a los manuales</p>", unsafe_allow_html=True)
-
-    with st.container():
-        st.markdown("""
-        <div style="border: 2px solid #ccc; border-radius: 10px; padding: 30px; box-shadow: 2px 2px 10px rgba(0,0,0,0.1); background-color: #f9f9f9;">
-        """, unsafe_allow_html=True)
-
-        usuario = st.text_input("👤 Usuario")
-        clave = st.text_input("🔑 Contraseña", type="password")
-
-        login_col1, login_col2, _ = st.columns([1,1,3])
-        with login_col1:
-            login = st.button("Iniciar sesión")
-        with login_col2:
-            cancelar = st.button("Cancelar")
-
-        st.markdown("</div>", unsafe_allow_html=True)
-
-    if cancelar:
-        st.stop()
-
     if "autenticado" not in st.session_state:
         st.session_state.autenticado = False
 
-    if login:
-        if usuario == st.secrets["credenciales"]["usuario"] and clave == st.secrets["credenciales"]["clave"]:
-            st.session_state.autenticado = True
-            st.rerun()
-        else:
-            st.error("❌ Usuario o contraseña incorrectos")
+    if not st.session_state.autenticado:
+        # Mostrar SOLO la pantalla de login
+        st.markdown("<h1 style='text-align: center;'>📘 Manu te da la bienvenida</h1>", unsafe_allow_html=True)
+
+        st.markdown("""
+            <div style='text-align: center;'>
+                <img src="https://cdn-icons-png.flaticon.com/512/4712/4712035.png" width="120"/>
+            </div>
+        """, unsafe_allow_html=True)
+
+        st.markdown("<p style='text-align: center; font-size: 18px;'>Por favor, ingresa tus credenciales para acceder a los manuales</p>", unsafe_allow_html=True)
+
+        with st.container():
+            st.markdown("""
+            <div style="border: 2px solid #ccc; border-radius: 10px; padding: 30px; box-shadow: 2px 2px 10px rgba(0,0,0,0.1); background-color: #f9f9f9;">
+            """, unsafe_allow_html=True)
+
+            usuario = st.text_input("👤 Usuario")
+            clave = st.text_input("🔑 Contraseña", type="password")
+
+            col1, col2, _ = st.columns([1,1,2])
+            with col1:
+                login = st.button("Iniciar sesión")
+            with col2:
+                cancelar = st.button("Cancelar")
+
+            st.markdown("</div>", unsafe_allow_html=True)
+
+        if cancelar:
             st.stop()
 
-    if not st.session_state.autenticado:
+        if login:
+            if usuario == st.secrets["credenciales"]["usuario"] and clave == st.secrets["credenciales"]["clave"]:
+                st.session_state.autenticado = True
+                st.rerun()
+            else:
+                st.error("❌ Usuario o contraseña incorrectos")
+                st.stop()
+
+        # Detiene la ejecución aquí si no está autenticado
         st.stop()
 
 from langchain.chat_models import ChatOpenAI
