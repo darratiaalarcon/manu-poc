@@ -85,10 +85,6 @@ def autenticar():
 # =====================================
 
 def ui_feedback_ticket_placeholder(tema: str, pregunta: str, respuesta: str):
-    """
-    Flujo de feedback y creación de ticket (placeholder, sin envíos reales).
-    Estados: idle | ask | form | done.
-    """
     if "feedback_stage" not in st.session_state:
         st.session_state["feedback_stage"] = "idle"
 
@@ -102,9 +98,7 @@ def ui_feedback_ticket_placeholder(tema: str, pregunta: str, respuesta: str):
             st.session_state["feedback_stage"] = "ask"
 
     if st.session_state["feedback_stage"] == "ask":
-        st.info(
-            "**Siento no haber ayudado lo suficiente.**\n\n¿Quieres generar un ticket solicitando ayuda en base a tu pregunta?"
-        )
+        st.info("**Siento no haber ayudado lo suficiente.**\n\n¿Quieres generar un ticket solicitando ayuda en base a tu pregunta?")
         col_si, col_no = st.columns(2)
         with col_si:
             if st.button("Sí, generar ticket", key="fb_yes"):
@@ -115,46 +109,43 @@ def ui_feedback_ticket_placeholder(tema: str, pregunta: str, respuesta: str):
                 st.success("Entendido. Seguimos mejorando 💪")
 
     if st.session_state["feedback_stage"] == "form":
-    st.subheader("Generar ticket de ayuda")
-    st.caption("Revisa el detalle. Puedes editar el mensaje antes de enviar.")
+        st.subheader("Generar ticket de ayuda")
+        st.caption("Revisa el detalle. Puedes editar el mensaje antes de enviar.")
 
-    # Usar un FORM para evitar el rerun prematuro y asegurar el render del éxito
-    with st.form("ticket_form"):
-        st.text_input("Tema", value=tema, disabled=True)
-        st.text_area("Tu pregunta", value=pregunta, height=100, disabled=True)
+        with st.form("ticket_form"):
+            st.text_input("Tema", value=tema, disabled=True)
+            st.text_area("Tu pregunta", value=pregunta, height=100, disabled=True)
 
-        tienda = st.text_input("Tienda (número o nombre)", placeholder="Ej: 123 o Mall Centro")
+            tienda = st.text_input("Tienda (número o nombre)", placeholder="Ej: 123 o Mall Centro")
 
-        texto_sugerido = (
-            f"Desde la tienda # {tienda or '___'} requerimos ayuda para entender de mejor manera "
-            f"o aclarar dudas respecto al tema y pregunta adjunta, en donde la respuesta no fue "
-            f"aclaratoria del todo. Muchas gracias."
-        )
-        cuerpo_editable = st.text_area(
-            "Mensaje para el equipo de soporte", value=texto_sugerido, height=160
-        )
+            texto_sugerido = (
+                f"Desde la tienda # {tienda or '___'} requerimos ayuda para entender de mejor manera "
+                f"o aclarar dudas respecto al tema y pregunta adjunta, en donde la respuesta no fue "
+                f"aclaratoria del todo. Muchas gracias."
+            )
+            cuerpo_editable = st.text_area(
+                "Mensaje para el equipo de soporte", value=texto_sugerido, height=160
+            )
 
-        incluir_contexto = st.checkbox(
-            "Incluir la última respuesta de Manu como contexto", value=True
-        )
+            incluir_contexto = st.checkbox(
+                "Incluir la última respuesta de Manu como contexto", value=True
+            )
 
-        submitted = st.form_submit_button("Enviar")
+            submitted = st.form_submit_button("Enviar")
 
-    if submitted:
-        # Simulación: generar ID y mostrar confirmación inmediatamente
-        ticket_id = random.randint(1000, 9999)
-        st.session_state["ticket_id"] = ticket_id
-        st.session_state["feedback_stage"] = "done"
-        st.success(
-            f"✅ Manu ha enviado tu ticket al equipo de soporte TI, tu # de ticket de atención es {ticket_id}"
-        )
+        if submitted:
+            ticket_id = random.randint(1000, 9999)
+            st.session_state["ticket_id"] = ticket_id
+            st.session_state["feedback_stage"] = "done"
+            st.success(
+                f"✅ Manu ha enviado tu ticket al equipo de soporte TI, tu # de ticket de atención es {ticket_id}"
+            )
 
     if st.session_state["feedback_stage"] == "done":
         ticket_id = st.session_state.get("ticket_id", "N/D")
         st.success(
             f"✅ Manu ha enviado tu ticket al equipo de soporte TI, tu # de ticket de atención es {ticket_id}"
         )
-
 
 # =====================================
 # App principal
