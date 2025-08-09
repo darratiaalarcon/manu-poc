@@ -1,8 +1,8 @@
 import streamlit as st
-import random
 import os
 import csv
 import time
+import random
 from datetime import datetime
 from dotenv import load_dotenv
 
@@ -12,10 +12,10 @@ from langchain.vectorstores import FAISS
 from langchain.embeddings import OpenAIEmbeddings
 from langchain.memory import ConversationBufferMemory
 
-# =====================================
-# Autenticación
-# =====================================
 
+# ===============================
+# Autenticación
+# ===============================
 def autenticar():
     if "autenticado" not in st.session_state:
         st.session_state.autenticado = False
@@ -35,24 +35,14 @@ def autenticar():
             unsafe_allow_html=True,
         )
 
-        with st.container():
-            st.markdown(
-                """
-                <div style="border: 2px solid #ccc; border-radius: 10px; padding: 30px; box-shadow: 2px 2px 10px rgba(0,0,0,0.1); background-color: #f9f9f9;">
-                """,
-                unsafe_allow_html=True,
-            )
+        usuario = st.text_input("👤 Usuario")
+        clave = st.text_input("🔑 Contraseña", type="password")
 
-            usuario = st.text_input("👤 Usuario")
-            clave = st.text_input("🔑 Contraseña", type="password")
-
-            col1, col2, _ = st.columns([1, 1, 2])
-            with col1:
-                login = st.button("Iniciar sesión")
-            with col2:
-                cancelar = st.button("Cancelar")
-
-            st.markdown("</div>", unsafe_allow_html=True)
+        col1, col2, _ = st.columns([1, 1, 2])
+        with col1:
+            login = st.button("Iniciar sesión")
+        with col2:
+            cancelar = st.button("Cancelar")
 
         if cancelar:
             st.stop()
@@ -64,7 +54,7 @@ def autenticar():
                     and clave == st.secrets["credenciales"]["clave"]
                 ):
                     st.session_state.autenticado = True
-                    st.rerun()
+                    st.experimental_rerun()  # solo aquí (login). Si prefieres, puedes quitarlo y dejar que el usuario haga refresh manual
                 else:
                     st.error("❌ Usuario o contraseña incorrectos")
                     st.stop()
@@ -75,29 +65,54 @@ def autenticar():
         st.stop()
 
 
-# =====================================
-# Feedback (👍/👎 + ticket simulado)
-# =====================================
+# ===============================
+# Utilidades
+# ===============================
+def registrar_interaccion(pregunta, respuesta, tema, tipo_respuesta="normal"):
+    with open("metricas.csv", mode="a", newline="", encoding="utf-8") as archivo:
+        escritor = csv.writer(archivo)
+        escritor.writerow([datetime.now().isoformat(), tema, pregunta, tipo_respuesta, respuesta])
 
-def ui_feedback_ticket_placeholder(tema: str, pregunta: str, respuesta: str):
+
+@st.cache_resource(show_spinner=False)
+def cargar_vectorstore(nombre_tema):
+    ruta = os.path.join("vectorstores", nombre_tema)
+    if not os.path.exists(ruta):
+        st.error(f"No se encontró el vectorstore para: {nombre_tema}")
+        st.stop()
+    return FAISS.load_local(ruta, OpenAIEmbeddings(), allow_dangerous_deserialization=True)
+
+
+# ===============================
+# UI de feedback y ticket (sin envíos reales)
+# ===============================
+def ui_feedback_ticket(tema: str, pregunta: str, respuesta: str):
     """
-    Flujo de feedback y creación de ticket (placeholder, sin envíos reales).
-    Estados: idle | ask | form | done.
+    Flujo de feedback 👍/👎 y creación de ticket (simulación).
+    Estados: idle | ask | form | done
+    - No usa experimental_rerun en el submit del ticket.
     """
+
+    # Estado por defecto
     if "feedback_stage" not in st.session_state:
         st.session_state["feedback_stage"] = "idle"
+    if "ticket_id" not in st.session_state:
+        st.session_state["ticket_id"] = None
 
-    col_pos, col_neg = st.columns(2)
-    with col_pos:
-        if st.button("👍 Útil", key="fb_up"):
-            st.success("¡Gracias por tu feedback! 🙌")
-            st.session_state["feedback_stage"] = "idle"
-    with col_neg:
-        if st.button("👎 Necesité más ayuda", key="fb_down"):
-            st.session_state["feedback_stage"] = "ask"
+    # Botones de feedback visibles debajo del último intercambio
+    if st.session_state["feedback_stage"] in ("idle", "liked"):
+        col_pos, col_neg = st.columns(2)
+        with col_pos:
+            if st.button("👍 Útil", key="fb_up"):
+                st.success("¡Gracias por tu feedback! 🙌")
+                st.session_state["feedback_stage"] = "liked"
+        with col_neg:
+            if st.button("👎 Necesité más ayuda", key="fb_down"):
+                st.session_state["feedback_stage"] = "ask"
 
+    # Pregunta empática
     if st.session_state["feedback_stage"] == "ask":
-        st.info("**Siento no haber ayudado lo suficiente.**¿Quieres generar un ticket solicitando ayuda en base a tu pregunta?")
+        st.info("**Siento no haber ayudado lo suficiente.**\n\n¿Quieres generar un ticket solicitando ayuda en base a tu pregunta?")
         col_si, col_no = st.columns(2)
         with col_si:
             if st.button("Sí, generar ticket", key="fb_yes"):
@@ -107,11 +122,12 @@ def ui_feedback_ticket_placeholder(tema: str, pregunta: str, respuesta: str):
                 st.session_state["feedback_stage"] = "idle"
                 st.success("Entendido. Seguimos mejorando 💪")
 
+    # Formulario del ticket
     if st.session_state["feedback_stage"] == "form":
         st.subheader("Generar ticket de ayuda")
         st.caption("Revisa el detalle. Puedes editar el mensaje antes de enviar.")
 
-        # Usamos un FORM para que el submit y el mensaje de éxito se rendericen juntos
+        # Usamos un FORM para manejar el submit sin rerun adicional
         with st.form("ticket_form"):
             st.text_input("Tema", value=tema, disabled=True)
             st.text_area("Tu pregunta", value=pregunta, height=100, disabled=True)
@@ -123,47 +139,46 @@ def ui_feedback_ticket_placeholder(tema: str, pregunta: str, respuesta: str):
                 f"o aclarar dudas respecto al tema y pregunta adjunta, en donde la respuesta no fue "
                 f"aclaratoria del todo. Muchas gracias."
             )
-            st.text_area(
-                "Mensaje para el equipo de soporte", value=texto_sugerido, height=160
-            )
+            cuerpo_editable = st.text_area("Mensaje para el equipo de soporte", value=texto_sugerido, height=160)
 
-            st.checkbox(
-                "Incluir la última respuesta de Manu como contexto", value=True
-            )
+            incluir_contexto = st.checkbox("Incluir la última respuesta de Manu como contexto", value=True)
 
             submitted = st.form_submit_button("Enviar")
 
         if submitted:
-            # Simulación: generar ID de ticket y confirmar (sin envío real)
+            # Simulación: generamos id de ticket y mostramos confirmación sin rerun
             ticket_id = random.randint(1000, 9999)
             st.session_state["ticket_id"] = ticket_id
             st.session_state["feedback_stage"] = "done"
+
+            # Mensaje de confirmación inmediato
             st.success(
                 f"✅ Manu ha enviado tu ticket al equipo de soporte TI, tu # de ticket de atención es {ticket_id}"
             )
 
-    if st.session_state["feedback_stage"] == "done":
-        ticket_id = st.session_state.get("ticket_id", "N/D")
+    # Banner persistente si ya se envió
+    if st.session_state["feedback_stage"] == "done" and st.session_state.get("ticket_id"):
         st.success(
-            f"✅ Manu ha enviado tu ticket al equipo de soporte TI, tu # de ticket de atención es {ticket_id}"
+            f"✅ Manu ha enviado tu ticket al equipo de soporte TI, tu # de ticket de atención es {st.session_state['ticket_id']}"
         )
 
 
-# =====================================
+# ===============================
 # App principal
-# =====================================
-
+# ===============================
 autenticar()
 
-# Configura tu API key aquí o como variable de entorno
+# Config .env / API
 load_dotenv()
-os.environ["OPENAI_API_KEY"] = os.getenv("OPENAI_API_KEY", "")
+api_key = os.getenv("OPENAI_API_KEY")
+if api_key:
+    os.environ["OPENAI_API_KEY"] = api_key
 
-# Inicialización de modelos y embeddings
+# LLM + embeddings
 llm = ChatOpenAI(temperature=0, model="gpt-3.5-turbo")
 embedding = OpenAIEmbeddings()
 
-# Diccionario de temas y archivos (nombre de carpeta FAISS generado previamente)
+# Temas / vectorstores
 DOCUMENTOS = {
     "Traspasos": "traspasos",
     "Reserva de presupuestos": "reserva_de_presupuestos",
@@ -171,71 +186,49 @@ DOCUMENTOS = {
     "Manifiesto digital": "manifiesto_digital",
 }
 
-# Diccionarios de respuestas especiales
+# Frases especiales
 SALUDOS = ["hola", "buenos días", "buenas tardes", "buenas", "qué tal", "como estás"]
 DESPEDIDAS = ["adios", "chao", "hasta luego", "nos vemos", "hasta pronto"]
 AGRADECIMIENTOS = ["gracias", "muchas gracias", "buena manu"]
 RECLAMOS = ["no me sirves", "respuesta mala", "respuestas malas", "esto no sirve", "no ayuda", "pésimo"]
 
-# Registro de métricas en CSV
-
-def registrar_interaccion(pregunta, respuesta, tema, tipo_respuesta="normal"):
-    with open("metricas.csv", mode="a", newline="", encoding="utf-8") as archivo:
-        escritor = csv.writer(archivo)
-        escritor.writerow(
-            [datetime.now().isoformat(), tema, pregunta, tipo_respuesta, respuesta]
-        )
-
-
-# Cargar FAISS ya persistido en disco
-@st.cache_resource(show_spinner=False)
-def cargar_vectorstore(nombre_tema):
-    ruta = os.path.join("vectorstores", nombre_tema)
-    if not os.path.exists(ruta):
-        st.error(f"No se encontró el vectorstore para: {nombre_tema}")
-        st.stop()
-    return FAISS.load_local(
-        ruta, OpenAIEmbeddings(), allow_dangerous_deserialization=True
-    )
-
-
 st.title("🤖 Manu: Tu asistente inteligente de manuales para tiendas")
 
-# Toast de confirmación persistente tras envío de ticket (simulación)
-if st.session_state.get("feedback_stage") == "done" and not st.session_state.get("_toast_shown"):
-    _tid = st.session_state.get("ticket_id", "N/D")
-    st.toast(f"✅ Ticket {_tid} enviado a Soporte TI")
-    st.session_state["_toast_shown"] = True
-
-# Inicialización de estados
+# Estado inicial
 if "tema" not in st.session_state:
     st.session_state.tema = None
     st.session_state.qa = None
-    st.session_state.chat_history = []
+    st.session_state.chat_history = []  # lista de (pregunta, respuesta)
     st.session_state.memory = None
+    st.session_state.feedback_stage = "idle"
+    st.session_state.ticket_id = None
 
-# Menú de selección de tema
+# Selección de tema
 if st.session_state.tema is None:
     tema = st.selectbox("¿Sobre qué tema necesitas ayuda?", list(DOCUMENTOS.keys()))
     if st.button("Seleccionar tema"):
         with st.spinner("Cargando tema y preparando a Manu..."):
-            archivo_vectorstore = DOCUMENTOS[tema]
-            vectorstore = cargar_vectorstore(archivo_vectorstore)
-            memoria = ConversationBufferMemory(
-                memory_key="chat_history", return_messages=True
-            )
+            vectorstore = cargar_vectorstore(DOCUMENTOS[tema])
+            memoria = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
             qa_chain = ConversationalRetrievalChain.from_llm(
-                llm=llm, retriever=vectorstore.as_retriever(), memory=memoria
+                llm=llm,
+                retriever=vectorstore.as_retriever(),
+                memory=memoria
             )
             st.session_state.tema = tema
             st.session_state.qa = qa_chain
             st.session_state.chat_history = []
             st.session_state.memory = memoria
-        st.rerun()
+        st.experimental_rerun()
 else:
     st.markdown(f"### Tema seleccionado: {st.session_state.tema}")
-    pregunta = st.text_input("Haz tu pregunta sobre este tema:")
-    if pregunta:
+
+    # Form para enviar la pregunta (evita reprocesos en cada rerun)
+    with st.form("ask_form"):
+        pregunta = st.text_input("Haz tu pregunta sobre este tema:")
+        submitted_q = st.form_submit_button("Preguntar")
+
+    if submitted_q and pregunta.strip():
         pregunta_lower = pregunta.strip().lower()
         tipo = "normal"
 
@@ -243,7 +236,7 @@ else:
             start = time.time()
 
             if any(s in pregunta_lower for s in SALUDOS):
-                respuesta = "¡Muy bien! Estoy aquí para ayudarte 😊"
+                respuesta = "¡Hola! Estoy aquí para ayudarte 😊"
                 tipo = "especial"
             elif any(s in pregunta_lower for s in DESPEDIDAS):
                 respuesta = "Adiós, fue un placer ayudarte. Si necesitas algo más, estaré atento 👋"
@@ -261,36 +254,34 @@ else:
                 respuesta = st.session_state.qa.run(pregunta)
 
             end = time.time()
-            respuesta_con_firma = f"{respuesta}— Manu 🤖"
+            respuesta_con_firma = respuesta + "\n\n— Manu 🤖"
+
+            # Guardamos el último intercambio
             st.session_state.chat_history.append((pregunta, respuesta_con_firma))
             st.session_state["ultima_pregunta"] = pregunta
             st.session_state["ultima_respuesta"] = respuesta_con_firma
-            st.session_state["feedback_stage"] = "idle"
+            st.session_state.feedback_stage = "idle"  # resetea feedback para nuevo intercambio
+            st.session_state.ticket_id = None          # resetea ticket
 
-            registrar_interaccion(
-                pregunta, respuesta, st.session_state.tema, tipo
-            )
-            st.markdown(
-                f"⏱️ Tiempo de respuesta: {round(end - start, 2)} segundos"
-            )
+            registrar_interaccion(pregunta, respuesta, st.session_state.tema, tipo)
+            st.markdown(f"⏱️ Tiempo de respuesta: {round(end - start, 2)} segundos")
 
-    # Render del historial (últimos primero)
-    for i, (pregunta_chat, respuesta_chat) in enumerate(
-        reversed(st.session_state.chat_history)
-    ):
+    # Mostrar el historial (últimos primero)
+    for i, (pregunta_chat, respuesta_chat) in enumerate(reversed(st.session_state.chat_history)):
         with st.chat_message("user"):
             st.markdown(pregunta_chat)
         with st.chat_message("assistant"):
             st.markdown(respuesta_chat)
 
-        # Mostrar el bloque de feedback SOLO debajo del último intercambio
+        # Solo debajo del último intercambio mostramos el bloque de feedback/ticket
         if i == 0:
-            ui_feedback_ticket_placeholder(
+            ui_feedback_ticket(
                 tema=st.session_state.tema,
                 pregunta=pregunta_chat,
                 respuesta=respuesta_chat,
             )
 
+    # Acciones inferiores
     col1, col2 = st.columns(2)
     with col1:
         if st.button("🔁 Volver al menú de temas"):
@@ -298,11 +289,14 @@ else:
             st.session_state.qa = None
             st.session_state.chat_history = []
             st.session_state.memory = None
-            st.rerun()
+            st.session_state.feedback_stage = "idle"
+            st.session_state.ticket_id = None
+            st.experimental_rerun()
     with col2:
         if st.button("🧼 Reiniciar conversación actual"):
             st.session_state.chat_history = []
             if st.session_state.memory:
                 st.session_state.memory.clear()
+            st.session_state.feedback_stage = "idle"
+            st.session_state.ticket_id = None
             st.success("✅ Conversación reiniciada. Puedes comenzar de nuevo.")
-            st.rerun()
