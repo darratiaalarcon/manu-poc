@@ -115,9 +115,11 @@ def ui_feedback_ticket_placeholder(tema: str, pregunta: str, respuesta: str):
                 st.success("Entendido. Seguimos mejorando 💪")
 
     if st.session_state["feedback_stage"] == "form":
-        st.subheader("Generar ticket de ayuda")
-        st.caption("Revisa el detalle. Puedes editar el mensaje antes de enviar.")
+    st.subheader("Generar ticket de ayuda")
+    st.caption("Revisa el detalle. Puedes editar el mensaje antes de enviar.")
 
+    # Usar un FORM para evitar el rerun prematuro y asegurar el render del éxito
+    with st.form("ticket_form"):
         st.text_input("Tema", value=tema, disabled=True)
         st.text_area("Tu pregunta", value=pregunta, height=100, disabled=True)
 
@@ -136,11 +138,16 @@ def ui_feedback_ticket_placeholder(tema: str, pregunta: str, respuesta: str):
             "Incluir la última respuesta de Manu como contexto", value=True
         )
 
-        if st.button("Enviar", type="primary", key="fb_send"):
-            # Simulación: generar ID de ticket y confirmar (sin envío real)
-            ticket_id = random.randint(1000, 9999)
-            st.session_state["ticket_id"] = ticket_id
-            st.session_state["feedback_stage"] = "done"
+        submitted = st.form_submit_button("Enviar")
+
+    if submitted:
+        # Simulación: generar ID y mostrar confirmación inmediatamente
+        ticket_id = random.randint(1000, 9999)
+        st.session_state["ticket_id"] = ticket_id
+        st.session_state["feedback_stage"] = "done"
+        st.success(
+            f"✅ Manu ha enviado tu ticket al equipo de soporte TI, tu # de ticket de atención es {ticket_id}"
+        )
 
     if st.session_state["feedback_stage"] == "done":
         ticket_id = st.session_state.get("ticket_id", "N/D")
@@ -237,7 +244,7 @@ else:
             start = time.time()
 
             if any(s in pregunta_lower for s in SALUDOS):
-                respuesta = "¡Hola! Estoy aquí para ayudarte 😊"
+                respuesta = "¡Muy bien! Estoy aquí para ayudarte 😊"
                 tipo = "especial"
             elif any(s in pregunta_lower for s in DESPEDIDAS):
                 respuesta = "Adiós, fue un placer ayudarte. Si necesitas algo más, estaré atento 👋"
