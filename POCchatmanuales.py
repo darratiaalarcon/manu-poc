@@ -1,17 +1,16 @@
 import streamlit as st
 import random
+import os
+import csv
+import time
+from datetime import datetime
+from dotenv import load_dotenv
 
 from langchain.chat_models import ChatOpenAI
 from langchain.chains import ConversationalRetrievalChain
 from langchain.vectorstores import FAISS
 from langchain.embeddings import OpenAIEmbeddings
 from langchain.memory import ConversationBufferMemory
-import os
-import csv
-import time
-from datetime import datetime
-from dotenv import load_dotenv
-from pathlib import Path
 
 # =====================================
 # Autenticación
@@ -22,9 +21,7 @@ def autenticar():
         st.session_state.autenticado = False
 
     if not st.session_state.autenticado:
-        # Mostrar SOLO la pantalla de login
         st.markdown("<h1 style='text-align: center;'>📘 Manu te da la bienvenida</h1>", unsafe_allow_html=True)
-
         st.markdown(
             """
             <div style='text-align: center;'>
@@ -33,7 +30,6 @@ def autenticar():
             """,
             unsafe_allow_html=True,
         )
-
         st.markdown(
             "<p style='text-align: center; font-size: 18px;'>Por favor, ingresa tus credenciales para acceder a los manuales</p>",
             unsafe_allow_html=True,
@@ -76,15 +72,18 @@ def autenticar():
                 st.error("⚠️ No hay credenciales configuradas en secrets.")
                 st.stop()
 
-        # Detiene la ejecución aquí si no está autenticado
         st.stop()
 
 
 # =====================================
-# Feedback Placeholder (👍/👎 + ticket simulado)
+# Feedback (👍/👎 + ticket simulado)
 # =====================================
 
 def ui_feedback_ticket_placeholder(tema: str, pregunta: str, respuesta: str):
+    """
+    Flujo de feedback y creación de ticket (placeholder, sin envíos reales).
+    Estados: idle | ask | form | done.
+    """
     if "feedback_stage" not in st.session_state:
         st.session_state["feedback_stage"] = "idle"
 
@@ -98,7 +97,8 @@ def ui_feedback_ticket_placeholder(tema: str, pregunta: str, respuesta: str):
             st.session_state["feedback_stage"] = "ask"
 
     if st.session_state["feedback_stage"] == "ask":
-        st.info("**Siento no haber ayudado lo suficiente.**\n\n¿Quieres generar un ticket solicitando ayuda en base a tu pregunta?")
+        st.info("**Siento no haber ayudado lo suficiente.**¿Quieres generar un ticket solicitando ayuda en base a tu pregunta?"
+        )
         col_si, col_no = st.columns(2)
         with col_si:
             if st.button("Sí, generar ticket", key="fb_yes"):
@@ -112,6 +112,7 @@ def ui_feedback_ticket_placeholder(tema: str, pregunta: str, respuesta: str):
         st.subheader("Generar ticket de ayuda")
         st.caption("Revisa el detalle. Puedes editar el mensaje antes de enviar.")
 
+        # Usamos un FORM para que el submit y el mensaje de éxito se rendericen juntos
         with st.form("ticket_form"):
             st.text_input("Tema", value=tema, disabled=True)
             st.text_area("Tu pregunta", value=pregunta, height=100, disabled=True)
@@ -123,17 +124,18 @@ def ui_feedback_ticket_placeholder(tema: str, pregunta: str, respuesta: str):
                 f"o aclarar dudas respecto al tema y pregunta adjunta, en donde la respuesta no fue "
                 f"aclaratoria del todo. Muchas gracias."
             )
-            cuerpo_editable = st.text_area(
+            st.text_area(
                 "Mensaje para el equipo de soporte", value=texto_sugerido, height=160
             )
 
-            incluir_contexto = st.checkbox(
+            st.checkbox(
                 "Incluir la última respuesta de Manu como contexto", value=True
             )
 
             submitted = st.form_submit_button("Enviar")
 
         if submitted:
+            # Simulación: generar ID de ticket y confirmar (sin envío real)
             ticket_id = random.randint(1000, 9999)
             st.session_state["ticket_id"] = ticket_id
             st.session_state["feedback_stage"] = "done"
@@ -146,6 +148,7 @@ def ui_feedback_ticket_placeholder(tema: str, pregunta: str, respuesta: str):
         st.success(
             f"✅ Manu ha enviado tu ticket al equipo de soporte TI, tu # de ticket de atención es {ticket_id}"
         )
+
 
 # =====================================
 # App principal
@@ -253,7 +256,7 @@ else:
                 respuesta = st.session_state.qa.run(pregunta)
 
             end = time.time()
-            respuesta_con_firma = respuesta + "\n\n— Manu 🤖"
+            respuesta_con_firma = respuesta + "— Manu 🤖"
             st.session_state.chat_history.append((pregunta, respuesta_con_firma))
             st.session_state["ultima_pregunta"] = pregunta
             st.session_state["ultima_respuesta"] = respuesta_con_firma
