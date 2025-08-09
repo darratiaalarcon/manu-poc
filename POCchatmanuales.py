@@ -97,8 +97,9 @@ def ui_feedback_ticket_placeholder(tema: str, pregunta: str, respuesta: str):
             st.session_state["feedback_stage"] = "ask"
 
     if st.session_state["feedback_stage"] == "ask":
-        st.info("**Siento no haber ayudado lo suficiente.**¿Quieres generar un ticket solicitando ayuda en base a tu pregunta?"
-        )
+        st.info("**Siento no haber ayudado lo suficiente.**
+
+¿Quieres generar un ticket solicitando ayuda en base a tu pregunta?")
         col_si, col_no = st.columns(2)
         with col_si:
             if st.button("Sí, generar ticket", key="fb_yes"):
@@ -202,6 +203,12 @@ def cargar_vectorstore(nombre_tema):
 
 st.title("🤖 Manu: Tu asistente inteligente de manuales para tiendas")
 
+# Toast de confirmación persistente tras envío de ticket (simulación)
+if st.session_state.get("feedback_stage") == "done" and not st.session_state.get("_toast_shown"):
+    _tid = st.session_state.get("ticket_id", "N/D")
+    st.toast(f"✅ Ticket {_tid} enviado a Soporte TI")
+    st.session_state["_toast_shown"] = True
+
 # Inicialización de estados
 if "tema" not in st.session_state:
     st.session_state.tema = None
@@ -256,7 +263,9 @@ else:
                 respuesta = st.session_state.qa.run(pregunta)
 
             end = time.time()
-            respuesta_con_firma = respuesta + "— Manu 🤖"
+            respuesta_con_firma = f"{respuesta}
+
+— Manu 🤖"
             st.session_state.chat_history.append((pregunta, respuesta_con_firma))
             st.session_state["ultima_pregunta"] = pregunta
             st.session_state["ultima_respuesta"] = respuesta_con_firma
