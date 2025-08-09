@@ -54,7 +54,7 @@ def autenticar():
                     and clave == st.secrets["credenciales"]["clave"]
                 ):
                     st.session_state.autenticado = True
-                    st.experimental_rerun()  # solo aquí (login). Si prefieres, puedes quitarlo y dejar que el usuario haga refresh manual
+                    st.rerun()  # solo aquí (login). Si prefieres, puedes quitarlo y dejar que el usuario haga refresh manual
                 else:
                     st.error("❌ Usuario o contraseña incorrectos")
                     st.stop()
