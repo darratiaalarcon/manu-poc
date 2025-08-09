@@ -107,7 +107,7 @@ def ui_feedback_ticket(tema: str, pregunta: str, respuesta: str):
                 st.success("¡Gracias por tu feedback! 🙌")
                 st.session_state["feedback_stage"] = "liked"
         with col_neg:
-            if st.button("👎 Necesité más ayuda", key="fb_down"):
+            if st.button("👎 Necesitaré más ayuda", key="fb_down"):
                 st.session_state["feedback_stage"] = "ask"
 
     # Pregunta empática
@@ -284,7 +284,7 @@ else:
     # Acciones inferiores
     col1, col2 = st.columns(2)
     with col1:
-        if st.button("🔁 Volver al menú de temas"):
+        if st.button("🔁 "):
             st.session_state.tema = None
             st.session_state.qa = None
             st.session_state.chat_history = []
@@ -293,7 +293,7 @@ else:
             st.session_state.ticket_id = None
             st.experimental_rerun()
     with col2:
-        if st.button("🧼 Reiniciar conversación actual"):
+        if st.button("🧼 "):
             st.session_state.chat_history = []
             if st.session_state.memory:
                 st.session_state.memory.clear()
