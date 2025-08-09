@@ -97,9 +97,7 @@ def ui_feedback_ticket_placeholder(tema: str, pregunta: str, respuesta: str):
             st.session_state["feedback_stage"] = "ask"
 
     if st.session_state["feedback_stage"] == "ask":
-        st.info("**Siento no haber ayudado lo suficiente.**
-
-¿Quieres generar un ticket solicitando ayuda en base a tu pregunta?")
+        st.info("**Siento no haber ayudado lo suficiente.**¿Quieres generar un ticket solicitando ayuda en base a tu pregunta?")
         col_si, col_no = st.columns(2)
         with col_si:
             if st.button("Sí, generar ticket", key="fb_yes"):
@@ -263,9 +261,7 @@ else:
                 respuesta = st.session_state.qa.run(pregunta)
 
             end = time.time()
-            respuesta_con_firma = f"{respuesta}
-
-— Manu 🤖"
+            respuesta_con_firma = f"{respuesta}— Manu 🤖"
             st.session_state.chat_history.append((pregunta, respuesta_con_firma))
             st.session_state["ultima_pregunta"] = pregunta
             st.session_state["ultima_respuesta"] = respuesta_con_firma
