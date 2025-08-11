@@ -103,7 +103,7 @@ def ui_feedback_ticket(tema: str, pregunta: str, respuesta: str):
     if st.session_state["feedback_stage"] in ("idle", "liked"):
         col_pos, col_neg = st.columns(2)
         with col_pos:
-            if st.button("👍 Útil", key="fb_up"):
+            if st.button("👍 Muy útil", key="fb_up"):
                 st.success("¡Gracias por tu feedback! 🙌")
                 st.session_state["feedback_stage"] = "liked"
         with col_neg:
@@ -284,18 +284,18 @@ else:
     # Acciones inferiores
     col1, col2 = st.columns(2)
     with col1:
-        if st.button("🔁 "):
+        if st.button("🔁 Volver a menú "):
             st.session_state.tema = None
             st.session_state.qa = None
             st.session_state.chat_history = []
             st.session_state.memory = None
             st.session_state.feedback_stage = "idle"
             st.session_state.ticket_id = None
-            st.experimental_rerun()
+            st.rerun()
     with col2:
-        if st.button("🧼 "):
+        if st.button("🧼 Reiniciar conversación "):
             st.session_state.chat_history = []
-            if st.session_state.memory:
+            if st.session_state.memory: 
                 st.session_state.memory.clear()
             st.session_state.feedback_stage = "idle"
             st.session_state.ticket_id = None
